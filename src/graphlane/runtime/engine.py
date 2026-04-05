@@ -18,6 +18,7 @@ from graphlane.api.results import TurnResult
 from graphlane.api.specs import AppSpec
 from graphlane.core.protocols import EventBus, LockManager, Limiter
 from graphlane.graph.registry import GraphRegistry
+from graphlane.runtime.stream import LangGraphEventAdapter
 from graphlane.side_effects import TASK_GRAPH_PUBLISH
 
 
@@ -164,6 +165,13 @@ class DefaultRuntimeKernel:
         raise TypeError("compiled graph must be callable or expose a callable stream(request)")
 
     async def _stream_graph(self, graph: Any, request: TurnRequest) -> AsyncIterator[TurnEvent]:
+        astream_events = getattr(graph, "astream_events", None)
+        if callable(astream_events):
+            adapter = LangGraphEventAdapter()
+            async for event in adapter.stream(graph, request):
+                yield event
+            return
+
         stream_events = getattr(graph, "stream_events", None)
         if callable(stream_events):
             async for event in stream_events(request):
