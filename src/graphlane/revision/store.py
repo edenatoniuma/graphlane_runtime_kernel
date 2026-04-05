@@ -24,3 +24,5 @@ class InMemoryRevisionStore:
     async def get_active_revision(self, app_id: str) -> ActiveRevision | None:
         return self._active_revisions.get(app_id)
 
+    async def clear_active_revision(self, app_id: str) -> None:
+        self._active_revisions.pop(app_id, None)

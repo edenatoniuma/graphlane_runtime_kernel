@@ -18,3 +18,18 @@ class TurnEvent:
     payload: dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time)
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "type": self.type,
+            "payload": dict(self.payload),
+            "timestamp": self.timestamp,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "TurnEvent":
+        return cls(
+            type=str(data["type"]),
+            payload=dict(data.get("payload", {})),
+            timestamp=float(data.get("timestamp", time())),
+        )
+

@@ -21,11 +21,21 @@ class GraphRegistry:
         self._active_graphs: dict[str, CachedGraph] = {}
 
     async def publish_revision(self, spec: AppSpec) -> int:
+        await self.store_revision(spec)
+        await self.activate_revision(spec.app_id, spec.revision)
+        return spec.revision
+
+    async def store_revision(self, spec: AppSpec) -> None:
         snapshot = RevisionSnapshot(app_id=spec.app_id, revision=spec.revision, spec=spec)
         await self._revision_store.save_snapshot(snapshot)
-        await self._revision_store.set_active_revision(spec.app_id, spec.revision)
-        self._active_graphs.pop(spec.app_id, None)
-        return spec.revision
+
+    async def activate_revision(self, app_id: str, revision: int) -> None:
+        await self._revision_store.set_active_revision(app_id, revision)
+        self._active_graphs.pop(app_id, None)
+
+    async def destroy_app(self, app_id: str) -> None:
+        await self._revision_store.clear_active_revision(app_id)
+        self._active_graphs.pop(app_id, None)
 
     async def get_active_revision(self, app_id: str) -> int | None:
         active = await self._revision_store.get_active_revision(app_id)
@@ -52,4 +62,3 @@ class GraphRegistry:
 
     async def warmup(self, app_id: str) -> None:
         await self.get_graph(app_id)
-
